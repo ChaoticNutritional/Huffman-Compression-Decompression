@@ -6,19 +6,20 @@
 
 struct HuffmanNode {
     char data; // The character in the node
-    int frequency; // Frequency of the character
-    HuffmanNode* left;
+    int frequency; // frequency of the character
+    HuffmanNode* left; 
     HuffmanNode* right;
     int childCount = 0;
    
     HuffmanNode(char data, int frequency, HuffmanNode* left = nullptr, HuffmanNode* right = nullptr, int children = 0) : data(data), frequency(frequency), left(left), right(right), childCount(children) {}
 };
 
-// comparator struct specific for nodes
+// comparator object specific for nodes
 struct CompareHuffmanNodes {
     bool operator()(const HuffmanNode& node1, const HuffmanNode& node2) const {
         if (node1.frequency == node2.frequency)
         {
+            // prioritize nodes with children to float to the top
             return (node1.childCount < node2.childCount);
         }
         else
@@ -30,32 +31,34 @@ HuffmanNode buildTree(std::priority_queue<HuffmanNode, std::vector<HuffmanNode>,
 {
     if (pq.size() == 1)
     {
+        // output pointer to the root of the tree
         return pq.top();
     }
     else
     {
-        // go to the address of pq.top
+        // new parent node
         HuffmanNode* parent = new HuffmanNode('\0', 0);
 
+        // create new node ptr for right child based on top of heap
+            // should be less frequent of next two nodes
         HuffmanNode* right = new HuffmanNode(pq.top()); 
-
         pq.pop();
 
-
+        // create new node ptr for left child based on top of heap
         HuffmanNode* left = new HuffmanNode(pq.top());
+        pq.pop();
 
+        // assign values to parent
         parent->left = left;
-
         parent->right = right;
-
         parent->frequency = left->frequency + right->frequency;
-
+        // notate increase in children owned by parent
         parent->childCount = left->childCount + right->childCount + 1;
         
-        pq.pop();
-
+        // push parent back into the min-heap priority queue
         pq.push(*parent);
 
+        // recurse
         return buildTree(pq);
     }
 }
@@ -111,21 +114,27 @@ std::string stringifyFile(const char* fileName)
 
 void traverseForCodes(HuffmanNode* currNodePtr, std::map<char, std::string> compressedBitsMap, std::string pathAsBits)
 {
-    // if(ptrToHead->data == '\0')
+    // if node has no children / Leaf node found
     if (currNodePtr->left == nullptr && currNodePtr->right == nullptr)
     {
+        // store new bit value in map for char in node
         compressedBitsMap[currNodePtr->data] = pathAsBits;
-        std::cout << compressedBitsMap[currNodePtr->data] << "  :  " << currNodePtr->data << std::endl;
+
+        // debugging
+        //std::cout << compressedBitsMap[currNodePtr->data] << "  :  " << currNodePtr->data << std::endl;
+
         return;
     }
 
     if (currNodePtr->left != nullptr)
     {
+        // take left path (more frequently occurring char)
         traverseForCodes(currNodePtr->left, compressedBitsMap, pathAsBits + "0");
     }
 
     if (currNodePtr->right != nullptr)
     {
+        // take right path (less frequently occurring char)
         traverseForCodes(currNodePtr->right, compressedBitsMap, pathAsBits + "1");
     }
 }
@@ -140,32 +149,14 @@ int main()
     freqMap = CalculateFrequencies(fileContents);
     pq = makePQ(freqMap);
 
-    //// confirming all elements preset in freqmap
-    //for (auto& elem : freqMap)
-    //{
-    //    //std::cout << elem.first << " : " << elem.second << std::endl;
-    //}
-
-    HuffmanNode head = buildTree(pq);
+    HuffmanNode root = buildTree(pq);
 
     // head
-    std::cout << head.frequency << std::endl;
+    std::cout << root.frequency << std::endl;
 
-    //1st layer
-    //std::cout << head.left->left->frequency << std::endl;
-    //std::cout << head.left->right->frequency << std::endl;
-
-    ////2nd layer
-    //std::cout << head.right->left->frequency << std::endl;
-    //std::cout << head.right->right->frequency << std::endl;
-
-   // std::cout << HuffmanQueue.size();
-
-    HuffmanNode* ptr = &head;
+    HuffmanNode* ptr = &root;
 
     traverseForCodes(ptr, pathAsBits, "");
-
-
 
     return 0;
 }
