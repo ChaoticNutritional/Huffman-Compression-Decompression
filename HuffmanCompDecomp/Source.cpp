@@ -9,14 +9,20 @@ struct HuffmanNode {
     int frequency; // Frequency of the character
     HuffmanNode* left;
     HuffmanNode* right;
+    int childCount = 0;
    
-    HuffmanNode(char data, int frequency, HuffmanNode* left = nullptr, HuffmanNode* right = nullptr) : data(data), frequency(frequency), left(left), right(right) {}
+    HuffmanNode(char data, int frequency, HuffmanNode* left = nullptr, HuffmanNode* right = nullptr, int children = 0) : data(data), frequency(frequency), left(left), right(right), childCount(children) {}
 };
 
 // comparator struct specific for nodes
 struct CompareHuffmanNodes {
     bool operator()(const HuffmanNode& node1, const HuffmanNode& node2) const {
-        return node1.frequency > node2.frequency;
+        if (node1.frequency == node2.frequency)
+        {
+            return (node1.childCount < node2.childCount);
+        }
+        else
+        return (node1.frequency > node2.frequency);
     }
 };
 
@@ -31,19 +37,20 @@ HuffmanNode buildTree(std::priority_queue<HuffmanNode, std::vector<HuffmanNode>,
         // go to the address of pq.top
         HuffmanNode* parent = new HuffmanNode('\0', 0);
 
-        // check if either child nodes have children already
-
-        HuffmanNode* left = new HuffmanNode(pq.top().data, pq.top().frequency, pq.top().left, pq.top().right); 
+        HuffmanNode* right = new HuffmanNode(pq.top()); 
 
         pq.pop();
 
 
-        HuffmanNode* right = new HuffmanNode(pq.top().data, pq.top().frequency, pq.top().left, pq.top().right);
+        HuffmanNode* left = new HuffmanNode(pq.top());
 
         parent->left = left;
+
         parent->right = right;
-        parent->data = NULL;
+
         parent->frequency = left->frequency + right->frequency;
+
+        parent->childCount = left->childCount + right->childCount + 1;
         
         pq.pop();
 
