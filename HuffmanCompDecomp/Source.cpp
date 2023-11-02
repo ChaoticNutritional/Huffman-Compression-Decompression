@@ -3,6 +3,7 @@
 #include <map>
 #include <queue>
 #include <fstream>
+#include <bitset>
 
 struct HuffmanNode {
     char data; // The character in the node
@@ -112,7 +113,7 @@ std::string stringifyFile(const char* fileName)
     return fileContents;
 }
 
-void traverseForCodes(HuffmanNode* currNodePtr, std::map<char, std::string> compressedBitsMap, std::string pathAsBits)
+void traverseForCodes(HuffmanNode* currNodePtr, std::map<char, std::string> &compressedBitsMap, std::string pathAsBits)
 {
     // if node has no children / Leaf node found
     if (currNodePtr->left == nullptr && currNodePtr->right == nullptr)
@@ -151,12 +152,19 @@ int main()
 
     HuffmanNode root = buildTree(pq);
 
-    // head
+    // total number of characters
     std::cout << root.frequency << std::endl;
 
     HuffmanNode* ptr = &root;
 
     traverseForCodes(ptr, pathAsBits, "");
 
+    // new file testing
+    std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
+    for (int i = 0; i < fileContents.length(); i++)
+    {
+        myFile << pathAsBits[fileContents[i]];
+    }
+    myFile.close();
     return 0;
 }
