@@ -1,2 +1,0 @@
-C:\Users\Jack\source\repos\HuffmanCompDecomp\Debug\HuffmanCompDecomp.exe
-C:\Users\Jack\source\repos\Huffman-Compression-Decompression\HuffmanCompDecomp\Debug\HuffmanCompDecomp.exe
