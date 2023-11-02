@@ -142,7 +142,8 @@ void traverseForCodes(HuffmanNode* currNodePtr, std::map<char, std::string> &com
 
 int main()
 {
-    std::string fileContents = stringifyFile("Text.txt");
+    std::string fileContents;
+    fileContents = stringifyFile("Text.txt");
     std::priority_queue<HuffmanNode, std::vector<HuffmanNode>, CompareHuffmanNodes> pq;
     std::map<char, int> freqMap;
     std::map<char, std::string> pathAsBits;
@@ -160,11 +161,30 @@ int main()
     traverseForCodes(ptr, pathAsBits, "");
 
     // new file testing
-    std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
-    for (int i = 0; i < fileContents.length(); i++)
+    //std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
+
+    // testing bitwise arithmetic output
+    // MESSY FIX THIS LATER!
+    // for each character in the file contents
+    for (char indivchar : fileContents)
     {
-        myFile << pathAsBits[fileContents[i]];
+
+        // find the huffman code for that char
+        // add each character of that huffman code to a new variable 'byte' until it is 8 bits long
+        char byte = 0;
+        for (char bit : pathAsBits[indivchar])
+        {
+            byte <<= 1;
+            byte |= bit;
+        }
+        std::cout << byte; 
     }
-    myFile.close();
+
+
+    //for (int i = 0; i < fileContents.length(); i++)
+    //{
+    //    myFile << pathAsBits[fileContents[i]];
+    //}
+    //myFile.close();
     return 0;
 }
