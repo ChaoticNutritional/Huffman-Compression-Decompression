@@ -161,23 +161,56 @@ int main()
     traverseForCodes(ptr, pathAsBits, "");
 
     // new file testing
-    //std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
+    std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
+    for (auto& element : pathAsBits)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            myFile << element.first - 0;
+        }
+        for (int i = 0; i < element.second.length(); i++)
+        {
+            myFile << element.second[i] - 0;
+        }
+        for(int i = 0; i < 8 - element.second.length(); i++)
+        {
+            myFile << '0';
+        }
+    }
+
 
     // testing bitwise arithmetic output
     // MESSY FIX THIS LATER!
+
+    int bitsSoFar = 0;
+    char byte = 0;
     // for each character in the file contents
     for (char indivchar : fileContents)
     {
 
         // find the huffman code for that char
         // add each character of that huffman code to a new variable 'byte' until it is 8 bits long
-        char byte = 0;
+
+        
+
         for (char bit : pathAsBits[indivchar])
         {
             byte <<= 1;
-            byte |= bit;
+            byte |= bit - '0';
+
+            if (++bitsSoFar == 8)
+            {
+                myFile << byte;
+                bitsSoFar = 0;
+                byte = 0;
+            }
         }
-        std::cout << byte; 
+        //std::cout << byte; 
+    }
+    if (bitsSoFar > 0)
+    {
+        byte <<= (8 - bitsSoFar);
+        myFile << byte;
     }
 
 
