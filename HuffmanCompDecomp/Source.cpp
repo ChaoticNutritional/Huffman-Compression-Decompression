@@ -10,7 +10,7 @@ struct HuffmanNode {
     int frequency; // frequency of the character
     HuffmanNode* left; 
     HuffmanNode* right;
-    int childCount = 0;
+    int childCount = 0; // used for prioritization of 
    
     HuffmanNode(char data, int frequency, HuffmanNode* left = nullptr, HuffmanNode* right = nullptr, int children = 0) : data(data), frequency(frequency), left(left), right(right), childCount(children) {}
 };
@@ -154,69 +154,140 @@ int main()
     HuffmanNode root = buildTree(pq);
 
     // total number of characters
-    std::cout << root.frequency << std::endl;
+    ////std::cout << root.frequency << std::endl;
 
     HuffmanNode* ptr = &root;
 
     traverseForCodes(ptr, pathAsBits, "");
 
-    // new file testing
+// OUTPUT FILE TESTING (IN PROGRESS)
     std::ofstream myFile("TestOut.bin", std::ios::binary);
-
-    //myFile << static_cast<char*>(static_cast<void*>(&ptr->frequency));
-
-
-    // testing bitwise arithmetic output
-    // MESSY FIX THIS LATER!
-
-    int bitsSoFar = 0; 
-    char byte = 0;
-    //std::bitset<8> c(byte);
-    // for each character in the file contents
-    for (char indivchar : fileContents)
+    if (myFile)
     {
+        // Write the length of the encoded data in terms of number of total characters
+        myFile.write(reinterpret_cast<char*>(&root.frequency), sizeof(int));
 
-        // find the huffman code for that char
-        // add each character of that huffman code to a new variable 'byte' until it is 8 bits long
+        // Write each unique char's real ascii code to the file
+        //for()
 
-        //std::bitset<8> b(pathAsBits[indivchar]);
-        
 
-        for (char bit : pathAsBits[indivchar])
+
+
+
+        /// ENCODING
+        // counter to handle number of bits stored
+        int bitsSoFar = 0;
+
+        // char 
+        unsigned char byte = 0;
+
+        // for each character in the file contents
+        for (char indivchar : fileContents)
         {
-            byte <<= 1;
-            byte |= bit - '0';
 
-            if (++bitsSoFar == 8)
+            // find the huffman code for that char
+            // add each character of that huffman code to a new variable 'byte' until it is 8 bits long
+            for (char bitFromHuffcode : pathAsBits[indivchar])
             {
-                std::bitset<8> c(byte);
-                std::cout << c << std::endl;
-                myFile << byte;
-                bitsSoFar = 0;
-                byte = 0;
+
+                // shift byte left by 1 creating an opening for the bit from the huffmancode of current char
+                byte <<= 1;
+
+                // bitwise OR toggles bits in byte based on the operand (bitFromHuffcode)
+                    /*
+                    * the "- '0' " is done because the bitFromHuffcode is a character within a string
+                    * since characters are represented as ASCII values, the bit will either be 48 or 49
+                    * (because we know it is either '0' or '1'.
+                    * 0 = 110000 = 48
+                    * 1 = 110001 = 48
+                    * subtracting either will result in:
+                    * 110000 - 110000 = 000000
+                    *        OR
+                    * 110001 - 110000 = 000001
+                    * allowing for a seamless bitwise OR operation
+                    */
+                byte |= bitFromHuffcode - '0';
+
+                if (++bitsSoFar == 8)
+                {
+                    // mostly for debugging to see binary output in console
+                    std::bitset<8> c(byte);
+
+                    // Debugging to see binary output in console
+                    std::cout << c << std::endl;
+
+                    // output the byte as data to the file
+                    myFile << byte;
+
+                    // reset the bit counter and byte's data now that it as been written
+                    bitsSoFar = 0;
+                    byte = 0;
+                }
             }
         }
+
+        // once out of the loop of chars in the fileContents string, check for padding needs
+        if (bitsSoFar > 0)
+        {
+            // shifts the values in byte a number of bits equal to the difference in a full bit and the bits accumulated
+            byte <<= (8 - bitsSoFar);
+
+            // write the byte with any necessary padding to the file
+            myFile << byte;
+
+            // debugging for output
+            std::bitset<8> c(byte);
+            std::cout << c << std::endl;
+        }
+
+        // we probably need an end of file marker
+
+        // close the file
+        myFile.close();
     }
-    if (bitsSoFar > 0)
-    {
-        byte <<= (8 - bitsSoFar);
-        myFile << byte;
-        std::bitset<8> c(byte);
-        std::cout << c << std::endl;
+    else {
+        std::cout << "No file found" << std::endl;
     }
 
-    myFile.close();
+    // debugging!!
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << std::endl;
 
+
+
+    // debugging output the character and its huffman code for each unique encoded character
     for (auto elem : pathAsBits)
     {
         std::cout << elem.first << "  :  " << elem.second << std::endl;
     }
 
+    // decompression testing
     std::ifstream myFile2("TestOut.bin", std::ios::binary);
     if (myFile2) {
+
+        /*
+        * Parameters: the encoded file
+        * 
+        * local variables: 
+        * - std::map<char, char *> - holds the real character ascii per unique char and its huffcode value
+        * - char bitBuffer - holds the bits we've collected so far, while be used as a key for the map!
+        *
+        * GOALS: 
+        * 
+        * read the head of the file, which will contain: 
+        * - true ascii value for each unique character
+        * - that unique character's associated huffman code
+        * - padding to 8
+        * 
+        * create an map with this header data of char and <char? char *> revisit....
+        * 
+        * write to a new file the decompressed associations of the file
+        * - a new ofstream("Decompressed.txt")
+        * - write each letter as it occurs from the input fil to the output file by reading bit by bit
+        * - when we reach eof of input file, stop and close both files
+        * 
+        */
 
         int counter = 0;
         std::string testout;
