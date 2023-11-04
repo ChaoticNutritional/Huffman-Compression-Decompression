@@ -161,29 +161,17 @@ int main()
     traverseForCodes(ptr, pathAsBits, "");
 
     // new file testing
-    std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
-    for (auto& element : pathAsBits)
-    {
-        for (int i = 0; i < 8; i++)
-        {
-            myFile << element.first - 0;
-        }
-        for (int i = 0; i < element.second.length(); i++)
-        {
-            myFile << element.second[i] - 0;
-        }
-        for(int i = 0; i < 8 - element.second.length(); i++)
-        {
-            myFile << '0';
-        }
-    }
+    std::ofstream myFile("TestOut.bin", std::ios::binary);
+
+    //myFile << static_cast<char*>(static_cast<void*>(&ptr->frequency));
 
 
     // testing bitwise arithmetic output
     // MESSY FIX THIS LATER!
 
-    int bitsSoFar = 0;
+    int bitsSoFar = 0; 
     char byte = 0;
+    //std::bitset<8> c(byte);
     // for each character in the file contents
     for (char indivchar : fileContents)
     {
@@ -191,6 +179,7 @@ int main()
         // find the huffman code for that char
         // add each character of that huffman code to a new variable 'byte' until it is 8 bits long
 
+        //std::bitset<8> b(pathAsBits[indivchar]);
         
 
         for (char bit : pathAsBits[indivchar])
@@ -200,24 +189,61 @@ int main()
 
             if (++bitsSoFar == 8)
             {
+                std::bitset<8> c(byte);
+                std::cout << c << std::endl;
                 myFile << byte;
                 bitsSoFar = 0;
                 byte = 0;
             }
         }
-        //std::cout << byte; 
     }
     if (bitsSoFar > 0)
     {
         byte <<= (8 - bitsSoFar);
         myFile << byte;
+        std::bitset<8> c(byte);
+        std::cout << c << std::endl;
     }
 
+    myFile.close();
+    std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << std::endl;
 
-    //for (int i = 0; i < fileContents.length(); i++)
-    //{
-    //    myFile << pathAsBits[fileContents[i]];
-    //}
-    //myFile.close();
+    for (auto elem : pathAsBits)
+    {
+        std::cout << elem.first << "  :  " << elem.second << std::endl;
+    }
+
+    std::ifstream myFile2("TestOut.bin", std::ios::binary);
+    if (myFile2) {
+
+        int counter = 0;
+        std::string testout;
+
+        //std::cout << "HERE" << std::endl;
+        myFile2.seekg(0, std::ios::end);
+        testout.resize(myFile2.tellg());
+        myFile2.seekg(0, std::ios::beg);
+        //std::cout << "HERE2" << std::endl;
+        myFile2.read(reinterpret_cast<char *>(&testout[0]), testout.size());
+            //std::cout << "HERE3" << std::endl;
+        std::cout << testout << std::endl;
+
+        unsigned char bit = 0;
+        for (int i = 0; i < testout.length(); i++)
+        {
+            //std::cout << reinterpret_cast<char*>() << std::endl;
+            bit |= testout[i] - '0';
+            std::cout << testout[i] << "  :  " << bit;
+            bit = testout[i] >>= 1;
+            //std::cout <<reinterpret_cast<char *>(&bit) << std::endl;
+        }
+        
+    }
+    else
+    {
+        std::cout << "not found";
+    }
     return 0;
 }
