@@ -88,9 +88,10 @@ std::map<char, int> CalculateFrequencies(const std::string& input) {
 
     for (auto ch: input) 
     {
-        if (ch == '\0' || ch == EOF) { break; }
-        // increases frquency as character is found
-        freqMap[ch]++;
+        if (ch != 0)
+        {
+            freqMap[ch]++;
+        }
     }
 
     return freqMap;
@@ -106,16 +107,23 @@ std::string stringifyFile(std::ifstream &input)
         fileContents.resize(input.tellg());
         input.seekg(0, std::ios::beg);
 
-        input.read(&fileContents[0], fileContents.size());
+        char c;
 
+        while (!input.eof())
+        {
+            input.get(c);
+            if (c == '\0')
+            {
+                //std::cout << "nulltermchar!!!! >:(" << std::endl;
+            }
+            else {
+                fileContents += c;
+            }
+        }
         input.close();
     }
     else {
-        std::cout << "No file found" << std::endl;
-    }
-    if (fileContents.find('\0'))
-    {
-        std::cout << "we got em!!" << std::endl;
+        //std::cout << "No file found" << std::endl;
     }
     return fileContents;
 }
@@ -259,7 +267,7 @@ void huffDecompress(const char* fileName)
             if (ptr->left == nullptr && ptr->right == nullptr)
             {
                 decodedFile << ptr->data;
-                std::cout << ptr->data;
+                //std::cout << ptr->data;
                 ptr = &stack.top();
             }
             bitMask = (bitBuffer >> 7 - bitsSoFar) & 1;
@@ -338,7 +346,7 @@ void huffDecompress(const char* fileName)
 
     else
     {
-        std::cout << "not found";
+        //std::cout << "not found";
     }
 }
 
@@ -354,16 +362,14 @@ int main()
     freqMap = CalculateFrequencies(fileContents);
     pq = makePQ(freqMap);
     
-
     HuffmanNode root = buildTree(pq);
 
     // total number of characters
-    ////std::cout << root.frequency << std::endl;
+    //////std::cout << root.frequency << std::endl;
 
     HuffmanNode* ptr = &root;
 
     getHuffCodes(ptr, pathAsBits, "");
-    pathAsBits.erase('\0');
 
 // OUTPUT FILE TESTING (IN PROGRESS)
     //ENCODE
@@ -433,13 +439,13 @@ int main()
         encodedFile.close();
     }
     else {
-        std::cout << "No file found" << std::endl;
+        //std::cout << "No file found" << std::endl;
     }
 
     //// debugging output the character and its huffman code for each unique encoded character
     for (auto elem : pathAsBits)
     {
-        std::cout << elem.first << "  :  " << elem.second << std::endl;
+        //std::cout << elem.first << "  :  " << elem.second << std::endl;
     }
 
     huffDecompress("TestOut.bin");
