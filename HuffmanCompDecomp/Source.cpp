@@ -5,6 +5,7 @@
 #include <fstream>
 #include <bitset>
 #include <stack>
+#include <string>
 
 struct HuffmanNode {
     char data; // The character in the node
@@ -87,6 +88,7 @@ std::map<char, int> CalculateFrequencies(const std::string& input) {
 
     for (auto ch: input) 
     {
+        if (ch == '\0' || ch == EOF) { break; }
         // increases frquency as character is found
         freqMap[ch]++;
     }
@@ -94,37 +96,38 @@ std::map<char, int> CalculateFrequencies(const std::string& input) {
     return freqMap;
 }
 
-std::string stringifyFile(const char* fileName)
+std::string stringifyFile(std::ifstream &input)
 {
     std::string fileContents;
-    std::ifstream myFile(fileName, std::ios::in);
-    if (myFile) {
+    if (input) {
 
         // adjusting the size of the string to return to fit all file contents
-        myFile.seekg(0, std::ios::end);
-        fileContents.resize(myFile.tellg());
-        myFile.seekg(0, std::ios::beg);
+        input.seekg(0, std::ios::end);
+        fileContents.resize(input.tellg());
+        input.seekg(0, std::ios::beg);
 
-        myFile.read(&fileContents[0], fileContents.size());
+        input.read(&fileContents[0], fileContents.size());
 
-        myFile.close();
+        input.close();
     }
     else {
         std::cout << "No file found" << std::endl;
     }
+    if (fileContents.find('\0'))
+    {
+        std::cout << "we got em!!" << std::endl;
+    }
     return fileContents;
 }
 
-void getHuffCodes(HuffmanNode* &currNodePtr, std::map<char, std::string> &compressedBitsMap, std::string pathAsBits)
+void getHuffCodes(HuffmanNode* &currNodePtr, std::map<char, std::string> &pathAsBits, std::string bitsTraversed)
 {
     // if node has no children / Leaf node found
     if (currNodePtr->left == nullptr && currNodePtr->right == nullptr)
     {
         // store new bit value in map for char in node
-        compressedBitsMap[currNodePtr->data] = pathAsBits;
-        currNodePtr->huffCode = pathAsBits;
-        // debugging
-        //std::cout << compressedBitsMap[currNodePtr->data] << "  :  " << currNodePtr->data << std::endl;
+        pathAsBits[currNodePtr->data] = bitsTraversed;
+        currNodePtr->huffCode = bitsTraversed;
 
         return;
     }
@@ -132,14 +135,25 @@ void getHuffCodes(HuffmanNode* &currNodePtr, std::map<char, std::string> &compre
     if (currNodePtr->left != nullptr)
     {
         // take left path (more frequently occurring char)
-        getHuffCodes(currNodePtr->left, compressedBitsMap, pathAsBits + "0");
+        getHuffCodes(currNodePtr->left, pathAsBits, bitsTraversed + "0");
     }
 
     if (currNodePtr->right != nullptr)
     {
         // take right path (less frequently occurring char)
-        getHuffCodes(currNodePtr->right, compressedBitsMap, pathAsBits + "1");
+        getHuffCodes(currNodePtr->right, pathAsBits, bitsTraversed + "1");
     }
+}
+
+int totalNodes(HuffmanNode* root)
+{
+    if (root == NULL)
+        return 0;
+
+    int l = totalNodes(root->left);
+    int r = totalNodes(root->right);
+
+    return 1 + l + r;
 }
 
 void DFSpostOrder(HuffmanNode* nodePtr, std::ofstream &output)
@@ -159,76 +173,142 @@ void huffDecompress(const char* fileName)
     //  Parameters: the encoded file
     //
     //  local variables :
-    //  -std::map<char, char*> -holds the real character ascii per unique charand its huffcode value
-    //  -char bitBuffer - holds the bits we've collected so far, while also being used as a key for the map
+    // CHECK -std::map<char, char*> -holds the real character ascii per unique charand its huffcode value
+    // CHECK -char bitBuffer - holds the bits we've collected so far, while also being used as a key for the map
     //  -int uniqueChars - counter for number of unique characters in order to build new table
-    std::map<char, char*> decodeMap;
+    std::map<char, char*> pathAsBits;
     char bitBuffer = 0;
     int uniqueChars = 0;
 
-    // decompression testing
+    // rebuilds the tree using a stack this time
     std::ifstream myFile2(fileName, std::ios::binary);
-    if (myFile2) {
-        
+    if (myFile2)
+    {
         std::map<char, std::string> pathAsBits;
         std::stack<HuffmanNode> stack;
 
+        // read the first data in the file which will be an integer storing the total number of nodes;
+        int numNodes = 0;
+        myFile2 >> numNodes;
         int i = 0;
-        HuffmanNode* ptr;
-        char nextChar = 0;
-        myFile2.read(&nextChar, sizeof(char));
-        HuffmanNode* test = new HuffmanNode(nextChar, 0);
-        stack.push(*test);
-        myFile2.read(&nextChar, sizeof(char));
 
-        while (i < 14)
+        // ptr to point to the root of the tree
+        HuffmanNode* ptr;
+
+        // holds the next char read from the file
+        myFile2.read(&bitBuffer, sizeof(char));
+
+        // temporary constant value while I figure out how to dynamically get the total number of nodes
+        while (i < numNodes)
         {
-            if (nextChar != '\0')
+            if (bitBuffer != '\0')
             {
-                HuffmanNode* leaf = new HuffmanNode(nextChar, 0);
+                HuffmanNode* leaf = new HuffmanNode(bitBuffer, 0);
                 stack.push(*leaf);
-                myFile2.read(&nextChar, sizeof(char));
+                myFile2.read(&bitBuffer, sizeof(char));
                 i++;
             }
             else
             {
-                HuffmanNode* parent = new HuffmanNode(nextChar, 0);
+                HuffmanNode* parent = new HuffmanNode(bitBuffer, 0);
 
                 parent->left = new HuffmanNode(stack.top());
                 stack.pop();
-                parent->right = new HuffmanNode(stack.top());
-                stack.pop();
+
+                if (!stack.empty())
+                {
+                    parent->right = new HuffmanNode(stack.top());
+                    stack.pop();
+                }
 
                 i++;
 
                 stack.push(*parent);
-                myFile2.read(&nextChar, sizeof(char));
+                myFile2.read(&bitBuffer, sizeof(char)); // seems like on the last run of this, it will hold the bit we want to use later
             }
         }
+
+        // ---NOTE---
         // Traversal results with backwards huffcodes likely due to different data structures but will test more
         ptr = &stack.top();
 
-            /*char nextChar = 0;
-            myFile2.read(&nextChar, sizeof(char));
-            HuffmanNode* left = new HuffmanNode(nextChar, 0);
-            HuffmanNode* right;
-            if (myFile2.read(&nextChar, sizeof(char) == '\0'))
+        // generate huff codes for the newly constructed tree
+        getHuffCodes(ptr, pathAsBits, "");
+        
+        // RESTRUCTURE...
+        // temporary so that I can fix the inverted binary for the huffman codes
+        for (auto& elem : pathAsBits)
+        {
+            for (char& indivChar : elem.second)
             {
-                right = nullptr;
-                HuffmanNode* parent = new HuffmanNode(nextChar, 0);
-                parent->left = left;
-                parent->right = right;
+                indivChar = (indivChar == '0') ? '1' : '0';
             }
-            else {
-                right = new HuffmanNode(nextChar, 0);
-                myFile2.read(&nextChar, sizeof(char));
-                HuffmanNode* parent = new HuffmanNode(nextChar, 0);
-                parent->left = left;
-                parent->right = right;
-            }*/
         }
 
+        /// WRITE TO A NEW FILE!
+        std::ofstream decodedFile("Decoded.txt", std::ios::out); 
 
+        char bitMask = 0;
+
+        int loopctr = 0;
+        int bitsSoFar = 0;
+        char bitsInByte[8];
+        
+        while (!myFile2.eof())
+        {
+            if (ptr->left == nullptr && ptr->right == nullptr)
+            {
+                decodedFile << ptr->data;
+                std::cout << ptr->data;
+                ptr = &stack.top();
+            }
+            bitMask = (bitBuffer >> 7 - bitsSoFar) & 1;
+            bitsInByte[bitsSoFar] = bitMask;
+            // leaf node
+
+            if (bitMask == 0)
+            {
+                ptr = ptr->right;
+            }
+            else if (bitMask == 1)
+            {
+                ptr = ptr->left;
+            }
+
+            if (++bitsSoFar >= 8)
+            {
+                myFile2.read(&bitBuffer, sizeof(char));
+                bitsSoFar = 0;
+            }
+
+            loopctr++;
+        }
+
+        decodedFile.close();
+        myFile2.close();
+
+        //bitMask = bitMask + std::to_string((bitBuffer >> i) & 1);
+
+
+
+        //// iterate over bits in the bitbuffer which hold the next byte of information
+        //for (int i = 7; i >= 0; i--)
+        //{
+        //    bitMask = bitMask + std::to_string((bitBuffer >> i) & 1);
+        //    for (auto elem : pathAsBits)
+        //    {
+        //        if (elem.second.compare(bitMask))
+        //        {
+        //            decodedFile << elem.first;
+        //            i -= bitMask.length();
+        //            bitBuffer <<= bitMask.length();
+        //        }
+        //    }
+        //}
+
+        // load the first full 8 bits into a variable
+
+    }
         /*
         * Parameters: the encoded file
         *
@@ -256,90 +336,6 @@ void huffDecompress(const char* fileName)
         *
         */
 
-
-        //std::vector<HuffmanNode> rebuildTree;
-
-        //int bitsSoFar = 0;
-        //char nextChar;
-        //while (myFile2.get(nextChar) && nextChar != '\0')
-        //{
-        //    // new huffnode to add to the rebuildTree vector when we're done remaking it
-        //    HuffmanNode* newNode = new HuffmanNode('\0', 0);
-
-        //    char test = 0;
-        //    for (int i = 0; i < 8; i++)
-        //    {
-        //        test <<= 1;
-        //    }
-
-        //    // the real ASCII character
-        //    newNode->data = nextChar;
-
-        //    // gets the number of bits we will need to examine for each char's huffcode
-        //    char codeLen = 0;
-
-        //    // placeholder for node's huffcode to be entered
-        //    std::string tempHuffCode = "";
-
-        //    myFile2.get(codeLen);
-        //    for (int i = 0; i < static_cast<int>(codeLen); i++)
-        //    {
-        //        // read the encoded bile bit by bit and add the bits to the placeholder string
-        //        char bit;
-        //        myFile2.get(bit);
-        //        tempHuffCode += bit;
-        //       // until we reach the length of this data's huffCode
-        //    }
-
-        //    rebuildTree.push_back(*newNode);
-        //}
-
-        // finish current byte if necessary
-
-
-
-        //std::string testout;
-
-        //int numUniqueChars = 0;
-
-        //myFile2.read(reinterpret_cast<char*>(&numUniqueChars),1);
-        ////std::cout << numUniqueChars;
-        ////std::cout << std::endl;
-
-        //myFile2.seekg(0, std::ios::end);
-        //testout.resize(myFile2.tellg());
-        //myFile2.seekg(4, std::ios::beg);
-
-        //// starting after the 4th byte:
-        //int counter = 0;
-        ////while (counter <= numUniqueChars)
-        ////{
-        ////    //
-        ////}
-        //
-
-        ////std::cout << "HERE2" << std::endl;
-        //myFile2.read(reinterpret_cast<char*>(&testout[0]), testout.size());
-        ////std::bitset<8> t(bitBuffer);
-        ////for (int i = 0; i < 8; i++)
-        ////{
-        ////    std::cout << t[i] << std::endl;
-        ////}
-
-        ////std::cout << "HERE3" << std::endl;
-        //std::cout << testout << std::endl;
-
-        //unsigned char bit = 0;
-        //for (int i = 0; i < testout.length(); i++)
-        //{
-        //    //std::cout << reinterpret_cast<char*>() << std::endl;
-        //    bit |= testout[i] - '0';
-        //    //std::cout << testout[i] << "  :  " << bit; 
-        //    bit = testout[i] >>= 1;
-        //    //std::cout <<reinterpret_cast<char *>(&bit) << std::endl;
-        //}
-
-
     else
     {
         std::cout << "not found";
@@ -349,7 +345,8 @@ void huffDecompress(const char* fileName)
 int main()
 {
     std::string fileContents;
-    fileContents = stringifyFile("Text.txt");
+    std::ifstream inFile("Text.txt", std::ios::in);
+    fileContents = stringifyFile(inFile);
     std::priority_queue<HuffmanNode, std::vector<HuffmanNode>, CompareHuffmanNodes> pq;
     std::map<char, int> freqMap;
     std::map<char, std::string> pathAsBits;
@@ -366,73 +363,20 @@ int main()
     HuffmanNode* ptr = &root;
 
     getHuffCodes(ptr, pathAsBits, "");
+    pathAsBits.erase('\0');
 
 // OUTPUT FILE TESTING (IN PROGRESS)
     //ENCODE
-    std::ofstream myFile("TestOut.bin", std::ios::out | std::ios::binary);
-    if (myFile)
+    std::ofstream encodedFile("TestOut.bin", std::ios::out | std::ios::binary);
+    if (encodedFile)
     {
-        //// WRITING TREE DATA
-        ////std::vector<char> buffer;
-        ////for (auto& entry : pathAsBits)
-        ////{
-        ////    buffer.push_back(entry.first);
-
-        ////    buffer.push_back(static_cast<char>(entry.second.length()));
-        ////    for (char bit : entry.second)
-        ////    {
-        ////        buffer.push_back(bit);
-        ////    }
-        ////}
-        ////buffer.push_back('\0');
-
-        ////int paddingAmt = (8 - buffer.size() % 8);
-
-        ////myFile.write(buffer.data(), buffer.size());
-
-
-        ////int bitsSoFar = paddingAmt;
-
-        //// char 
-        //int bitsSoFar = 0;
-        //unsigned char byte = 0;
-
-        //// output codebook info
-        //for (int i = 0; i < pathAsBits.size(); i++)
-        //{
-        //    //output the letter
-        //    while (ptr->left != nullptr && ptr->right != nullptr)
-        //    {
-        //        // traverse to the leaves
-        //        HuffmanNode* childptr;
-        //    }
-
-        //    //output the length of its huffcode
-
-        //    //output the huffmancode
-
-        //    if (++bitsSoFar == 8)
-        //    {
-        //        // mostly for debugging to see binary output in console
-        //        std::bitset<8> c(byte);
-
-        //        // Debugging to see binary output in console
-        //        std::cout << c << std::endl;
-
-        //        // output the byte as data to the file
-        //        myFile << byte;
-
-        //        // reset the bit counter and byte's data now that it as beenwritten
-        //        bitsSoFar = 0;
-        //        byte = 0;
-        //    }
-        //}
-
-        DFSpostOrder(ptr, myFile);
-        myFile << '\0';
-
+        // writes the tree information to the encoded file
+            // total num of nodes
+        encodedFile << totalNodes(ptr);
+            // each node's data written through post order traversal
+        DFSpostOrder(ptr, encodedFile);
+        
         // bitsSoFar can be zero because all of the data written by DFSpostOrder are in bytes
-            // ADDENDUM: so is '\0' because it's sizeofChar
         int bitsSoFar = 0;
         unsigned char byte = 0;
 
@@ -466,14 +410,8 @@ int main()
 
                 if (++bitsSoFar == 8)
                 {
-                    // mostly for debugging to see binary output in console
-                    std::bitset<8> c(byte);
-
-                    // Debugging to see binary output in console
-                    std::cout << c << std::endl;
-
                     // output the byte as data to the file
-                    myFile << byte;
+                    encodedFile << byte;
 
                     // reset the bit counter and byte's data now that it as beenwritten
                     bitsSoFar = 0;
@@ -488,23 +426,17 @@ int main()
             byte <<= (8 - bitsSoFar);
 
             // write the byte with any necessary padding to the file
-            myFile << byte;
-
-            // debugging for output
-            std::bitset<8> c(byte);
-            std::cout << c << std::endl;
+            encodedFile << byte;
         }
 
-        // we probably need an end of file marker? does it need to be encoded?
-
         // close the file
-        myFile.close();
+        encodedFile.close();
     }
     else {
         std::cout << "No file found" << std::endl;
     }
 
-    // debugging output the character and its huffman code for each unique encoded character
+    //// debugging output the character and its huffman code for each unique encoded character
     for (auto elem : pathAsBits)
     {
         std::cout << elem.first << "  :  " << elem.second << std::endl;
