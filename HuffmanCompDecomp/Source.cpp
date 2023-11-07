@@ -206,9 +206,9 @@ void huffDecompress(const char* fileName)
         // holds the next char read from the file
         myFile2.read(&bitBuffer, sizeof(char));
 
-        // temporary constant value while I figure out how to dynamically get the total number of nodes
         while (i < numNodes)
         {
+            // we are at a leaf, as parent nodes have data : '\0'
             if (bitBuffer != '\0')
             {
                 HuffmanNode* leaf = new HuffmanNode(bitBuffer, 0);
@@ -216,6 +216,7 @@ void huffDecompress(const char* fileName)
                 myFile2.read(&bitBuffer, sizeof(char));
                 i++;
             }
+            // parent node
             else
             {
                 HuffmanNode* parent = new HuffmanNode(bitBuffer, 0);
@@ -223,6 +224,7 @@ void huffDecompress(const char* fileName)
                 parent->left = new HuffmanNode(stack.top());
                 stack.pop();
 
+                // check dealing with odd number of operations in rebuilding the tree, as the previous pop could empty the stack
                 if (!stack.empty())
                 {
                     parent->right = new HuffmanNode(stack.top());
@@ -243,7 +245,7 @@ void huffDecompress(const char* fileName)
         // generate huff codes for the newly constructed tree
         getHuffCodes(ptr, pathAsBits, "");
         
-        // RESTRUCTURE...
+        // MIGHT NOT NEED THIS
         // temporary so that I can fix the inverted binary for the huffman codes
         for (auto& elem : pathAsBits)
         {
@@ -258,11 +260,12 @@ void huffDecompress(const char* fileName)
 
         char bitMask = 0;
 
-        int loopctr = 0;
+        //int loopctr = 0;
         int bitsSoFar = 0;
         char bitsInByte[8];
         
-        while (!myFile2.eof())
+        // Makes sure ptr is not null when we enter to get rid of warning for now
+        while (!myFile2.eof() && ptr != nullptr)
         {
             if (ptr->left == nullptr && ptr->right == nullptr)
             {
@@ -274,6 +277,8 @@ void huffDecompress(const char* fileName)
             bitsInByte[bitsSoFar] = bitMask;
             // leaf node
 
+            // TODO!!
+            // redefined the rules...
             if (bitMask == 0)
             {
                 ptr = ptr->right;
@@ -289,7 +294,7 @@ void huffDecompress(const char* fileName)
                 bitsSoFar = 0;
             }
 
-            loopctr++;
+            // DEBUGGING: loopctr++;
         }
 
         decodedFile.close();
