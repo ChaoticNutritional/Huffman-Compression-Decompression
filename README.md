@@ -9,19 +9,19 @@ My goal with this project was to learn a new concept and implement it when left 
 *NOTE::As this project was intended to be a challenge posed to me by me :) There are a number of things I'd still like to implement that I haven't had the chance to yet, but I'd like to update this as I continue*
 
 - Error checking with exceptions
-- -- I'd like to implement more error catching using exceptions in a number of cases, but most notably: if the file doesn't exist
+  - I'd like to implement more error catching using exceptions in a number of cases, but most notably: if the file doesn't exist
 
 - Refactoring
-- -- I'd like to make sure I can separate this single big cpp file into multiple files, including headers
+  - I'd like to make sure I can separate this single big cpp file into multiple files, including headers
 
 - Cleanup (General)
-- -- I left a number of debug statements in as comments, as well as a number of comments either explaining my thought process or explaining a topic that was mostly for me picking up the work again after sleeping so that I could collect my thoughts and jump right back in. Once I get to a solid place, I'll get rid of these and keep them in my personal notes!
+  - I left a number of debug statements in as comments, as well as a number of comments either explaining my thought process or explaining a topic that was mostly for me picking up the work again after sleeping so that I could collect my thoughts and jump right back in. Once I get to a solid place, I'll get rid of these and keep them in my personal notes!
 
 - Inversion of bits on Decompression
-- -- I noticed that during decompression, the tree's position was mirrored which likely had to do with how I've chosen to reconstruct the tree from a compressed file vs. the way it was built to begin with. Since this was made during a self imposed deadline, I felt it was more important to get the project functioning rather than at peak performance _in this case_. In the meantime I have a nested for loop updating the HuffCode values in the pathAsBits map as a stopgap solution. However in the future, moving forward I'd like to see if I can address this at the **root** of the problem.
+  - I noticed that during decompression, the tree's position was mirrored which likely had to do with how I've chosen to reconstruct the tree from a compressed file vs. the way it was built to begin with. Since this was made during a self imposed deadline, I felt it was more important to get the project functioning rather than at peak performance _in this case_. In the meantime I have a nested for loop updating the HuffCode values in the pathAsBits map as a stopgap solution. However in the future, moving forward I'd like to see if I can address this at the **root** of the problem.
 
 - General Optimization
-- -- There are a few key points that I think could perform better than they are currently, and I also feel that there is some potentially unnecessary operations that could be completed elsewhere in the code as well. I'd like to analyze the performance as a whole and debug to see where slowdowns are...
+  - There are a few key points that I think could perform better than they are currently, and I also feel that there is some potentially unnecessary operations that could be completed elsewhere in the code as well. I'd like to analyze the performance as a whole and debug to see where slowdowns are...
 
 ## The program explained
 
